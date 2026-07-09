@@ -13,7 +13,7 @@ license: mit
 
 **Loan risk assessment and AML compliance auditor** — a full-stack fintech app that scores credit risk, runs compliance checks, screens application notes for AML red flags, and generates detailed audit reports.
 
-**Live demo:** [huggingface.co/spaces/niraikula-krishnan/FinGuard-AI](https://huggingface.co/spaces/niraikula-krishnan/FinGuard-AI)  
+**Live demo:** [finguard-ai.onrender.com](https://finguard-ai.onrender.com)  
 **GitHub:** [github.com/niraikula-krishnan/FinGuard-AI](https://github.com/niraikula-krishnan/FinGuard-AI)
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
@@ -250,6 +250,10 @@ python test_app.py
 ---
 
 ## Resume Bullet Points
+
+**Links for resume:**  
+- Live demo: https://finguard-ai.onrender.com  
+- Source code: https://github.com/niraikula-krishnan/FinGuard-AI
 
 - Designed and built **FinGuard-AI**, a full-stack loan risk and AML compliance system evaluating applicant default probability
 - Formulated a multi-factor risk model integrating credit score, debt-to-income (DTI), and loan-to-income (LTI) ratios with graded risk output (A–D)
