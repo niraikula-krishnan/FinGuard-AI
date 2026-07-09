@@ -26,7 +26,7 @@
 |-------|------------|
 | Backend | Python, FastAPI, Uvicorn |
 | Database | MySQL |
-| Frontend | HTML5, CSS3, Vanilla JavaScript |
+| Frontend | HTML, CSS, JavaScript |
 | AI (optional) | Google Gemini 1.5 Flash |
 | Icons | Lucide |
 
