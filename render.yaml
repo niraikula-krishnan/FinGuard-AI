@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: finguard-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Optional: add GEMINI_API_KEY in Render dashboard for AI audit reports
+      # Do NOT set MYSQL_HOST on free tier — app uses in-memory demo storage

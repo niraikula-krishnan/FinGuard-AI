@@ -259,28 +259,61 @@ python test_app.py
 
 ---
 
-## Deploy on Hugging Face (free)
+## Deploy live (free)
 
-1. Create a **Docker Space** at [huggingface.co/spaces](https://huggingface.co/spaces)
-2. Push this repo to the Space:
+### Option A: Render — **recommended** (full FastAPI app)
 
-```bash
-git remote add space https://huggingface.co/spaces/niraikula-krishnan/FinGuard-AI.git
-git push space main
-```
+Best for the **complete app** (form, API, risk engine, audit reports).
 
-Use your Hugging Face **Write** token when prompted.
+1. Push code to GitHub: `github.com/niraikula-krishnan/FinGuard-AI`
+2. Go to [render.com](https://render.com) → **New → Blueprint** (or Web Service)
+3. Connect your **FinGuard-AI** repo — Render reads `render.yaml` automatically
+4. **Environment variables** (Render dashboard → Environment):
+   - `GEMINI_API_KEY` — optional, for AI audit reports
+   - **Do not** set `MYSQL_HOST` on free tier — app uses in-memory storage (demo mode)
+5. Click **Deploy** — live URL in ~5 minutes: `https://finguard-ai.onrender.com` (name may vary)
 
-3. In **Space Settings → Secrets**, optionally add:
-   - `GEMINI_API_KEY` — for AI audit reports
+| Render free tier | Note |
+|----------------|------|
+| Cost | $0 |
+| Sleep | App sleeps after ~15 min idle; first load may take 30–60 sec |
+| Database | In-memory demo (MySQL code still on GitHub for reviewers) |
 
-4. **Do not** set `MYSQL_HOST` on Hugging Face — the app uses **in-memory storage** for the live demo (like SkinGPT). MySQL code remains in the repo for local development.
+---
 
-5. Wait a few minutes for the Docker build. Your live link:
+### Option B: Netlify (static demo only)
 
-**https://huggingface.co/spaces/niraikula-krishnan/FinGuard-AI**
+Netlify hosts **static sites only** — not FastAPI. Use the `hf_deploy/` browser demo.
 
-> Data on HF resets when the Space restarts — fine for portfolio demos.
+1. Go to [netlify.com](https://netlify.com) → **Add new site → Import from Git**
+2. Select **FinGuard-AI** repo
+3. Build settings (auto-read from `netlify.toml`):
+   - **Publish directory:** `hf_deploy`
+   - **Build command:** (leave empty)
+4. Deploy → live URL like `https://finguard-ai.netlify.app`
+
+| Netlify | What you get |
+|---------|----------------|
+| Full FastAPI backend | No |
+| Working UI demo in browser | Yes |
+| Free forever | Yes |
+
+---
+
+### Option C: Hugging Face (optional)
+
+See `hf_deploy/` + `deploy_hf.ps1` for a free static Space. Docker Spaces on HF require Pro.
+
+---
+
+## Deploy comparison
+
+| Platform | Full app | Free | Best for |
+|----------|----------|------|----------|
+| **Render** | Yes | Yes (sleeps) | Resume live link with real API |
+| **Netlify** | Demo only | Yes | Quick static UI demo |
+| **HF Static** | Demo only | Yes | If you already use HF |
+| **Local + MySQL** | Yes | Yes | Development & showing DB skills |
 
 ---
 
