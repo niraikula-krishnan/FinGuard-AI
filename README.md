@@ -1,6 +1,20 @@
+---
+title: FinGuard-AI
+emoji: 🛡️
+colorFrom: gray
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # FinGuard-AI
 
 **Loan risk assessment and AML compliance auditor** — a full-stack fintech app that scores credit risk, runs compliance checks, screens application notes for AML red flags, and generates detailed audit reports.
+
+**Live demo:** [huggingface.co/spaces/niraikula-krishnan/FinGuard-AI](https://huggingface.co/spaces/niraikula-krishnan/FinGuard-AI)  
+**GitHub:** [github.com/niraikula-krishnan/FinGuard-AI](https://github.com/niraikula-krishnan/FinGuard-AI)
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green)
@@ -182,6 +196,8 @@ MYSQL_DATABASE=loan
 
 > The app works **without** a Gemini API key. It will use the built-in rule-based report generator instead.
 
+> **Local dev:** set `MYSQL_HOST` in `.env` for MySQL. **Hugging Face demo:** leave `MYSQL_HOST` unset — data is stored in memory for the session (same pattern as SkinGPT).
+
 ### 3. Start the server
 
 ```bash
@@ -240,6 +256,31 @@ python test_app.py
 - Developed a compliance auditor with Gemini AI integration and rule-based fallback for unstructured note analysis and AML flagging
 - Configured a MySQL database with JSON-serialized compliance logs and markdown audit report storage
 - Built a responsive dashboard with real-time DTI calculation, SVG risk gauges, and dynamic audit report rendering
+
+---
+
+## Deploy on Hugging Face (free)
+
+1. Create a **Docker Space** at [huggingface.co/spaces](https://huggingface.co/spaces)
+2. Push this repo to the Space:
+
+```bash
+git remote add space https://huggingface.co/spaces/niraikula-krishnan/FinGuard-AI.git
+git push space main
+```
+
+Use your Hugging Face **Write** token when prompted.
+
+3. In **Space Settings → Secrets**, optionally add:
+   - `GEMINI_API_KEY` — for AI audit reports
+
+4. **Do not** set `MYSQL_HOST` on Hugging Face — the app uses **in-memory storage** for the live demo (like SkinGPT). MySQL code remains in the repo for local development.
+
+5. Wait a few minutes for the Docker build. Your live link:
+
+**https://huggingface.co/spaces/niraikula-krishnan/FinGuard-AI**
+
+> Data on HF resets when the Space restarts — fine for portfolio demos.
 
 ---
 

@@ -32,7 +32,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_db():
-    database.init_db()
+    mode = "MySQL" if database.init_db() else "in-memory (demo)"
+    logger.info(f"Database ready: {mode}")
 
 
 class ApplicantSubmitRequest(BaseModel):

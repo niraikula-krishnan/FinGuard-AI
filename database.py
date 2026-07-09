@@ -1,4 +1,3 @@
-import mysql.connector
 import os
 import logging
 import json
@@ -6,58 +5,64 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
 logger = logging.getLogger("finguard.database")
 
-# Read connection parameters from environment variables
-MYSQL_HOST = os.environ.get("MYSQL_HOST", "127.0.0.1")
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "")
 MYSQL_USER = os.environ.get("MYSQL_USER", "root")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 MYSQL_DATABASE = os.environ.get("MYSQL_DATABASE", "loan")
 MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3306"))
 
+_memory_records: List[Dict[str, Any]] = []
+_next_id = 1
+_mysql_ok = False
+
+
+def _mysql_configured() -> bool:
+    return bool(MYSQL_HOST.strip())
+
+
+def db_active() -> bool:
+    """True when connected to MySQL; False when using in-memory demo storage."""
+    return _mysql_ok
+
+
 def get_db_connection(include_db: bool = True):
     """Establishes connection to the MySQL server."""
+    import mysql.connector
+
     if include_db:
         return mysql.connector.connect(
             host=MYSQL_HOST,
             user=MYSQL_USER,
             password=MYSQL_PASSWORD,
             database=MYSQL_DATABASE,
-            port=MYSQL_PORT
+            port=MYSQL_PORT,
         )
-    else:
-        return mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            port=MYSQL_PORT
-        )
+    return mysql.connector.connect(
+        host=MYSQL_HOST,
+        user=MYSQL_USER,
+        password=MYSQL_PASSWORD,
+        port=MYSQL_PORT,
+    )
 
-def init_db():
-    """Initializes the MySQL database and table structures if missing."""
+
+def _init_mysql() -> bool:
+    global _mysql_ok
     logger.info(f"Initializing MySQL database '{MYSQL_DATABASE}'...")
-    
-    # 1. Connect without selecting database to create it
-    try:
-        conn = get_db_connection(include_db=False)
-        cursor = conn.cursor()
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {MYSQL_DATABASE}")
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        logger.error(f"Failed to check/create MySQL database: {e}")
-        raise RuntimeError(f"MySQL connection error. Make sure MySQL is running on {MYSQL_HOST}:{MYSQL_PORT}. Detail: {e}")
 
-    # 2. Connect with selected database and create the single table
+    conn = get_db_connection(include_db=False)
+    cursor = conn.cursor()
+    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {MYSQL_DATABASE}")
+    conn.commit()
+    cursor.close()
+    conn.close()
+
     conn = get_db_connection(include_db=True)
     cursor = conn.cursor()
-
-    # Create the single simplified table 'loananalysis'
-    cursor.execute(f"""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS loananalysis (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
@@ -83,11 +88,31 @@ def init_db():
         cursor.execute(
             "ALTER TABLE loananalysis ADD COLUMN audit_mode VARCHAR(20) NOT NULL DEFAULT 'rule_based'"
         )
-    
+
     conn.commit()
     cursor.close()
     conn.close()
-    logger.info(f"MySQL table 'loananalysis' initialized successfully inside database '{MYSQL_DATABASE}'.")
+    _mysql_ok = True
+    logger.info(f"MySQL table 'loananalysis' ready in database '{MYSQL_DATABASE}'.")
+    return True
+
+
+def init_db() -> bool:
+    """Initialize MySQL when configured; otherwise use in-memory storage (HF demo mode)."""
+    global _mysql_ok
+
+    if not _mysql_configured():
+        _mysql_ok = False
+        logger.info("MySQL not configured — using in-memory storage (demo mode).")
+        return False
+
+    try:
+        return _init_mysql()
+    except Exception as exc:
+        logger.warning(f"MySQL unavailable, using in-memory storage: {exc}")
+        _mysql_ok = False
+        return False
+
 
 def save_loan_analysis(
     name: str,
@@ -103,79 +128,114 @@ def save_loan_analysis(
     compliance_status: str,
     compliance_logs: List[Dict[str, Any]],
     audit_report: str,
-    audit_mode: str = "rule_based"
+    audit_mode: str = "rule_based",
 ) -> int:
-    """Inserts a new loan analysis record into the 'loananalysis' table."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    """Inserts a new loan analysis record."""
+    global _next_id
     created_at = datetime.now().isoformat()
-    
-    # Serialize logs list to JSON string for single-column storage
-    compliance_logs_json = json.dumps(compliance_logs)
-    
-    query = """
-        INSERT INTO loananalysis (
-            name, income, loan_amount, credit_score, debt_to_income, 
-            employment_status, notes, tenure, risk_score, risk_grade, compliance_status, 
-            compliance_logs, audit_report, audit_mode, created_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """
-    params = (
-        name, income, loan_amount, credit_score, debt_to_income, 
-        employment_status, notes, tenure, risk_score, risk_grade, compliance_status, 
-        compliance_logs_json, audit_report, audit_mode, created_at
-    )
-              
-    cursor.execute(query, params)
-    row_id = cursor.lastrowid
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return row_id
+
+    if _mysql_ok:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        compliance_logs_json = json.dumps(compliance_logs)
+        query = """
+            INSERT INTO loananalysis (
+                name, income, loan_amount, credit_score, debt_to_income,
+                employment_status, notes, tenure, risk_score, risk_grade, compliance_status,
+                compliance_logs, audit_report, audit_mode, created_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        params = (
+            name, income, loan_amount, credit_score, debt_to_income,
+            employment_status, notes, tenure, risk_score, risk_grade, compliance_status,
+            compliance_logs_json, audit_report, audit_mode, created_at,
+        )
+        cursor.execute(query, params)
+        row_id = cursor.lastrowid
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return row_id
+
+    record_id = _next_id
+    _next_id += 1
+    _memory_records.append({
+        "id": record_id,
+        "name": name,
+        "income": income,
+        "loan_amount": loan_amount,
+        "credit_score": credit_score,
+        "debt_to_income": debt_to_income,
+        "employment_status": employment_status,
+        "notes": notes,
+        "tenure": tenure,
+        "risk_score": risk_score,
+        "risk_grade": risk_grade,
+        "compliance_status": compliance_status,
+        "compliance_logs": list(compliance_logs),
+        "audit_report": audit_report,
+        "audit_mode": audit_mode,
+        "created_at": created_at,
+    })
+    return record_id
+
 
 def fetch_all_applicants() -> List[Dict[str, Any]]:
     """Returns all records sorted by date descending."""
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM loananalysis ORDER BY created_at DESC")
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return rows
+    if _mysql_ok:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM loananalysis ORDER BY created_at DESC")
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return rows
+
+    return sorted(_memory_records, key=lambda r: r["created_at"], reverse=True)
+
 
 def fetch_applicant_details(record_id: int) -> Optional[Dict[str, Any]]:
-    """Returns details for a single record, parsing the compliance logs JSON."""
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    
-    cursor.execute("SELECT * FROM loananalysis WHERE id = %s", (record_id,))
-    row = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    
-    if not row:
-        return None
-        
-    # Deserialize compliance logs from JSON string back to Python list
-    try:
-        row["compliance_logs"] = json.loads(row["compliance_logs"]) if row["compliance_logs"] else []
-    except Exception:
-        row["compliance_logs"] = []
-        
-    return row
+    """Returns details for a single record, parsing compliance logs when needed."""
+    if _mysql_ok:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM loananalysis WHERE id = %s", (record_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if not row:
+            return None
+        try:
+            row["compliance_logs"] = json.loads(row["compliance_logs"]) if row["compliance_logs"] else []
+        except Exception:
+            row["compliance_logs"] = []
+        return row
+
+    for row in _memory_records:
+        if row["id"] == record_id:
+            return dict(row)
+    return None
+
 
 def delete_applicant_record(record_id: int) -> bool:
     """Deletes a record by ID."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("DELETE FROM loananalysis WHERE id = %s", (record_id,))
-        conn.commit()
-        return True
-    except Exception as e:
-        logger.error(f"Failed to delete record {record_id}: {e}")
-        conn.rollback()
-        return False
-    finally:
-        cursor.close()
-        conn.close()
+    global _memory_records
+
+    if _mysql_ok:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("DELETE FROM loananalysis WHERE id = %s", (record_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Failed to delete record {record_id}: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    before = len(_memory_records)
+    _memory_records = [r for r in _memory_records if r["id"] != record_id]
+    return len(_memory_records) < before
