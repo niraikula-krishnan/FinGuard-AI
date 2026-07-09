@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinGuard-AI: Credit Risk & Compliance Auditor</title>
+    <!-- Google Fonts Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Style Sheets -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Control Header -->
+        <header class="app-header">
+            <div class="header-logo-group">
+                <i data-lucide="shield-alert" class="logo-icon"></i>
+                <div class="header-text">
+                    <h1>FinGuard-AI</h1>
+                    <p class="subtitle">Loan Risk Assessment & AML Compliance Auditor</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Workspace -->
+        <main class="app-workspace">
+            <!-- Left Panel: Submission File Form -->
+            <section class="form-section card">
+                <div class="card-header">
+                    <h2><i data-lucide="file-plus" class="section-icon"></i> Submit Loan Application</h2>
+                </div>
+                <form id="loan-form" class="form-body">
+                    <div class="input-group">
+                        <label for="name">Applicant Name</label>
+                        <input type="text" id="name" placeholder="e.g. John Doe" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="income">Annual Income (₹)</label>
+                            <input type="number" id="income" min="1000" placeholder="e.g. 75000" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="loan_amount">Requested Loan (₹)</label>
+                            <input type="number" id="loan_amount" min="1000" placeholder="e.g. 25000" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="tenure">Tenure (Years)</label>
+                            <input type="number" id="tenure" min="1" max="30" value="5" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="emi_display">Payment per Month (₹)</label>
+                            <input type="text" id="emi_display" value="₹0" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="existing_monthly_debt">Existing Monthly Debt (₹)</label>
+                            <input type="number" id="existing_monthly_debt" min="0" step="100" value="0" placeholder="e.g. 5000" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="debt_to_income">Debt-to-Income (%) — auto</label>
+                            <input type="text" id="debt_to_income" value="0%" readonly>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="credit_score">Credit Score (300-850)</label>
+                        <input type="number" id="credit_score" min="300" max="850" placeholder="e.g. 720" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="employment_status">Employment Status</label>
+                        <select id="employment_status">
+                            <option value="Employed" selected>Fully Employed</option>
+                            <option value="Self-Employed">Self-Employed / Business Owner</option>
+                            <option value="Student">Student / Academic</option>
+                            <option value="Unemployed">Unemployed</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="notes">Self-Reported Application Notes (Audited for AML)</label>
+                        <textarea id="notes" placeholder="Explain the loan purpose, business accounts, or cash source. Notes containing triggers like 'crypto investment' or 'anonymous overseas account' will flag AML alerts."></textarea>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="primary-btn">
+                        <i data-lucide="calculator" class="btn-icon"></i> Calculate & Audit Risk
+                    </button>
+                </form>
+            </section>
+
+            <!-- Right Panel: Applicants Database & Inspector details -->
+            <section class="database-section card">
+                <div class="card-header">
+                    <h2><i data-lucide="database" class="section-icon"></i> Application Ledger Database</h2>
+                    <span id="db-counter" class="badge">0 Records</span>
+                </div>
+                <div class="table-filter-bar">
+                    <div class="search-box-container">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Search applicants by name...">
+                    </div>
+                    <div class="filter-buttons">
+                        <button class="filter-tab active" data-filter="all" type="button">All</button>
+                        <button class="filter-tab" data-filter="passed" type="button">Passed</button>
+                        <button class="filter-tab" data-filter="flagged" type="button">Flagged</button>
+                    </div>
+                </div>
+                <div class="ledger-table-wrapper">
+                    <table class="ledger-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Loan Size</th>
+                                <th>Credit</th>
+                                <th>DTI</th>
+                                <th>Risk Score</th>
+                                <th>Compliance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicant-rows">
+                            <!-- Populated dynamically -->
+                            <tr>
+                                <td colspan="7" class="table-placeholder">No applications submitted yet. Fill in the form on the left.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Bottom Divider: Detailed audit report of selected applicant -->
+                <div id="audit-inspector" class="audit-inspector hidden">
+                    <div class="inspector-header">
+                        <h3><i data-lucide="file-text"></i> Audit Dossier: <span id="inspect-name">Applicant Name</span></h3>
+                        <button id="close-inspector-btn" class="close-btn">&times;</button>
+                    </div>
+                    
+                    <div class="inspector-layout">
+                        <!-- Score meters -->
+                        <div class="inspector-metrics-column">
+                            <div class="metric-card">
+                                <h4>Default Risk Modeler</h4>
+                                <div class="gauge-box">
+                                    <svg class="gauge-svg" viewBox="0 0 100 100">
+                                        <circle class="gauge-bg" cx="50" cy="50" r="40" />
+                                        <circle id="risk-gauge-fill" class="gauge-fill risk-green" cx="50" cy="50" r="40" stroke-dasharray="251" stroke-dashoffset="251" />
+                                        <text id="risk-gauge-text" class="gauge-text" x="50" y="55">0%</text>
+                                    </svg>
+                                </div>
+                                <p id="inspect-grade" class="risk-badge grade-green">Low Risk (Grade A)</p>
+                            </div>
+                            
+                            <div class="metric-card">
+                                <h4>Compliance Checks Checklist</h4>
+                                <div id="compliance-checks-list" class="checks-checklist">
+                                    <!-- Dynamic list of individual rules -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- LLM Text Report -->
+                        <div class="inspector-report-column">
+                            <div class="report-box">
+                                <div class="report-header-tab">
+                                    <span>Audit Report</span>
+                                    <span id="inspect-report-mode" class="badge badge-rule-based">Rule-based</span>
+                                </div>
+                                <div id="inspect-report-text" class="report-markdown-body">
+                                    <!-- Formatted markdown report text -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+    <!-- App Controller JS -->
+    <script src="app.js"></script>
+</body>
+</html>
