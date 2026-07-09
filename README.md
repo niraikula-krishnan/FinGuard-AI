@@ -32,21 +32,91 @@
 
 ---
 
-## How It Works
+## Workflow
+
+### User workflow (dashboard)
+
+1. **Open the dashboard** at `http://localhost:8080`
+2. **Fill in the loan application form**
+   - Applicant name, annual income, loan amount, tenure
+   - Existing monthly debt (EMI and DTI are calculated automatically)
+   - Credit score and employment status
+   - Optional application notes (screened for AML keywords)
+3. **Click "Calculate & Audit Risk"**
+4. **Review results** in the application ledger
+   - Risk score, DTI, and compliance status (PASSED / FLAGGED)
+5. **Inspect an applicant** (eye icon) to open the audit dossier
+   - Risk gauge and grade (A–D)
+   - Compliance checklist
+   - Full audit report (AI or rule-based)
+6. **Search or filter** applicants by name or compliance status
+7. **Delete** records when no longer needed
+
+---
+
+### Application processing pipeline
+
+When a loan application is submitted, the backend runs this sequence:
 
 ```
-Applicant Form → FastAPI → Risk Model + Compliance Checks → Audit Report → MySQL
-                                    ↓
-                          Gemini API (if key set)
-                                    ↓
-                          Rule-based engine (fallback)
+┌─────────────────┐
+│  User submits   │
+│  form (UI)      │
+└────────┬────────┘
+         │  POST /api/applicants
+         ▼
+┌─────────────────┐
+│  1. Calculate   │  EMI from loan amount + tenure (10.5% rate)
+│     DTI         │  DTI = (existing debt + EMI) / monthly income
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  2. Credit risk │  Weighted score from credit score, DTI, LTI,
+│     scoring     │  and employment status → grade A–D
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  3. Compliance  │  DTI ≤ 45%, LTI ≤ 8× income, credit ≥ 550
+│     checks      │
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  4. Audit       │  Gemini AI (if API key set)
+│     report      │  ──or── rule-based engine (fallback)
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  5. Save to     │  Single row in MySQL `loananalysis` table
+│     MySQL       │  (scores, logs, report, audit mode)
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  6. Return      │  Risk score, grade, DTI, compliance status
+│     response    │  UI refreshes ledger and opens audit view
+└─────────────────┘
 ```
+
+| Step | Module | Output |
+|------|--------|--------|
+| DTI calculation | `risk_service.py` | Debt-to-income ratio (%) |
+| Risk scoring | `risk_service.py` | Risk score 0–100, grade A–D |
+| Compliance checks | `risk_service.py` | Checklist with PASSED / FLAGGED per rule |
+| Audit report | `risk_service.py` | Markdown report + `ai` or `rule_based` mode |
+| Persistence | `database.py` | Record saved to `loananalysis` table |
+| API | `main.py` | JSON response to frontend |
+
+---
+
+### Audit report modes
+
+| Mode | When | Label in UI |
+|------|------|-------------|
+| **AI report** | `GEMINI_API_KEY` is set and the API call succeeds | AI Report |
+| **Rule-based report** | No API key, or AI call fails | Rule-based Report |
+
+Risk scoring and compliance checks **always** run locally. Only the written audit report uses AI when available.
 
 **DTI formula:** `(existing monthly debt + new loan EMI) ÷ monthly income × 100`
-
-**Audit reports:**
-- **AI report** — when `GEMINI_API_KEY` is set and the API call succeeds
-- **Rule-based report** — when no API key is configured or the AI call fails
 
 ---
 
@@ -83,7 +153,7 @@ FinGuard-AI/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/FinGuard-AI.git
+git clone https://github.com/niraikula-krishnan/FinGuard-AI.git
 cd FinGuard-AI
 ```
 
