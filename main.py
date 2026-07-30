@@ -48,6 +48,12 @@ class ApplicantSubmitRequest(BaseModel):
     api_key: Optional[str] = None
 
 
+class ApplicantUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    loan_amount: Optional[float] = None
+    income: Optional[float] = None
+
+
 @app.get("/api/applicants")
 async def list_applicants():
     """Returns a list of all applicants from the MySQL database."""
@@ -170,6 +176,24 @@ async def delete_applicant(applicant_id: int):
         logger.error(f"Deletion failed: {e}")
         raise HTTPException(status_code=500, detail="Database deletion error.")
 
+
+@app.put("/api/applicants/{applicant_id}")
+async def update_applicant_info(applicant_id: int, req: ApplicantUpdateRequest):
+    """Partially updates an applicant's basic info."""
+    updates = {k: v for k, v in req.dict(exclude_unset=True).items() if v is not None}
+    if not updates:
+        return {"success": True}
+        
+    try:
+        success = database.update_applicant(applicant_id, updates)
+        if not success:
+            raise HTTPException(status_code=404, detail="Applicant not found or update failed.")
+        return {"success": True, "message": f"Applicant {applicant_id} updated."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update failed: {e}")
+        raise HTTPException(status_code=500, detail="Database update error.")
 
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 if os.path.exists(static_dir):

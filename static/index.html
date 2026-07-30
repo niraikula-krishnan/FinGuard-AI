@@ -12,6 +12,10 @@
     <link rel="stylesheet" href="style.css">
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -104,6 +108,17 @@
                     <h2><i data-lucide="database" class="section-icon"></i> Application Ledger Database</h2>
                     <span id="db-counter" class="badge">0 Records</span>
                 </div>
+                
+                <!-- Analytics Charts -->
+                <div id="analytics-container" class="analytics-container" style="display: flex; gap: 15px; padding: 10px 20px; margin-bottom: 10px; border-bottom: 1px solid var(--border-light); height: 180px;">
+                    <div style="flex: 1; display: flex; justify-content: center; position: relative;">
+                        <canvas id="riskDonutChart"></canvas>
+                    </div>
+                    <div style="flex: 2; position: relative;">
+                        <canvas id="approvalBarChart"></canvas>
+                    </div>
+                </div>
+
                 <div class="table-filter-bar">
                     <div class="search-box-container">
                         <i data-lucide="search" class="search-icon"></i>
@@ -119,12 +134,12 @@
                     <table class="ledger-table">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Loan Size</th>
-                                <th>Credit</th>
-                                <th>DTI</th>
-                                <th>Risk Score</th>
-                                <th>Compliance</th>
+                                <th class="sortable" data-sort="name">Name <i data-lucide="chevron-down" class="sort-icon"></i></th>
+                                <th class="sortable" data-sort="loan_amount">Loan Size <i data-lucide="chevron-down" class="sort-icon"></i></th>
+                                <th class="sortable" data-sort="credit_score">Credit <i data-lucide="chevron-down" class="sort-icon"></i></th>
+                                <th class="sortable" data-sort="debt_to_income">DTI <i data-lucide="chevron-down" class="sort-icon"></i></th>
+                                <th class="sortable" data-sort="risk_score">Risk Score <i data-lucide="chevron-down" class="sort-icon"></i></th>
+                                <th class="sortable" data-sort="compliance_status">Compliance <i data-lucide="chevron-down" class="sort-icon"></i></th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -170,9 +185,12 @@
                         <!-- LLM Text Report -->
                         <div class="inspector-report-column">
                             <div class="report-box">
-                                <div class="report-header-tab">
-                                    <span>Audit Report</span>
-                                    <span id="inspect-report-mode" class="badge badge-rule-based">Rule-based</span>
+                                <div class="report-header-tab" style="display: flex; justify-content: space-between; align-items: center; padding-right: 15px;">
+                                    <div>
+                                        <span>Audit Report</span>
+                                        <span id="inspect-report-mode" class="badge badge-rule-based">Rule-based</span>
+                                    </div>
+                                    <button id="download-pdf-btn" class="submit-btn" style="padding: 6px 12px; font-size: 13px;"><i data-lucide="download" style="width: 14px; height: 14px; margin-right: 4px;"></i> Export PDF</button>
                                 </div>
                                 <div id="inspect-report-text" class="report-markdown-body">
                                     <!-- Formatted markdown report text -->

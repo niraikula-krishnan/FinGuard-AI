@@ -6,6 +6,11 @@ let activeApplicantId = null;
 let applicantsData = [];
 let activeFilter = 'all';
 let searchQuery = '';
+let sortColumn = null;
+let sortDirection = 'desc';
+
+let riskChartInstance = null;
+let approvalChartInstance = null;
 
 // DOM Elements
 const loanForm = document.getElementById("loan-form");
@@ -35,6 +40,31 @@ const riskGaugeText = document.getElementById("risk-gauge-text");
 const complianceChecksList = document.getElementById("compliance-checks-list");
 const inspectReportText = document.getElementById("inspect-report-text");
 const inspectReportMode = document.getElementById("inspect-report-mode");
+const downloadPdfBtn = document.getElementById("download-pdf-btn");
+
+function showToast(message, type = "info") {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    let icon = "info";
+    if (type === "success") icon = "check-circle";
+    if (type === "error") icon = "alert-circle";
+    if (type === "warning") icon = "alert-triangle";
+    
+    toast.innerHTML = `<i data-lucide="${icon}"></i> <span>${message}</span>`;
+    container.appendChild(toast);
+    lucide.createIcons();
+    
+    setTimeout(() => {
+        toast.classList.add("toast-fadeOut");
+        toast.addEventListener("transitionend", () => toast.remove());
+    }, 3000);
+}
 
 function calculateEmi(loanAmount, tenureYears) {
     if (loanAmount <= 0 || tenureYears <= 0) return 0;
@@ -56,6 +86,21 @@ function calculateDti(annualIncome, loanAmount, tenureYears, existingMonthlyDebt
 // Initial Setup
 document.addEventListener("DOMContentLoaded", () => {
     fetchApplicants();
+    
+    if (downloadPdfBtn) {
+        downloadPdfBtn.addEventListener("click", () => {
+            const element = document.getElementById("inspect-report-text");
+            if (!element) return;
+            const opt = {
+                margin:       0.5,
+                filename:     `FinGuard_Audit_${inspectName.textContent.replace(/ /g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        });
+    }
 
     [loanAmountInput, tenureInput, incomeInput, existingDebtInput].forEach(el => {
         if (el) el.addEventListener("input", updateFinancialsRealtime);
@@ -85,9 +130,93 @@ document.addEventListener("DOMContentLoaded", () => {
             filterAndRenderTable();
         });
     });
+
+    // Wire up sorting headers
+    document.querySelectorAll("th.sortable").forEach(th => {
+        th.addEventListener("click", () => {
+            const column = th.getAttribute("data-sort");
+            if (sortColumn === column) {
+                sortDirection = sortDirection === "asc" ? "desc" : "asc";
+            } else {
+                sortColumn = column;
+                sortDirection = "desc";
+            }
+            
+            document.querySelectorAll("th.sortable").forEach(h => {
+                h.classList.remove("sort-active", "sort-asc");
+            });
+            th.classList.add("sort-active");
+            if (sortDirection === "asc") th.classList.add("sort-asc");
+            
+            filterAndRenderTable();
+        });
+    });
 });
 
 loanForm.addEventListener("submit", handleFormSubmit);
+
+function updateCharts(data) {
+    const riskCtx = document.getElementById('riskDonutChart');
+    const barCtx = document.getElementById('approvalBarChart');
+    const container = document.getElementById('analytics-container');
+    if (!riskCtx || !barCtx) return;
+
+    if (!data || data.length === 0) {
+        if (container) container.style.display = 'none';
+        return;
+    } else {
+        if (container) container.style.display = 'flex';
+    }
+
+    // Destroy existing instances if they exist
+    if (riskChartInstance) riskChartInstance.destroy();
+    if (approvalChartInstance) approvalChartInstance.destroy();
+
+    let low = 0, moderate = 0, high = 0;
+    let approvedAmt = 0, flaggedAmt = 0;
+
+    data.forEach(app => {
+        if (app.risk_score >= 50) high++;
+        else if (app.risk_score >= 25) moderate++;
+        else low++;
+
+        if (app.compliance_status === "PASSED") approvedAmt += app.loan_amount;
+        else flaggedAmt += app.loan_amount;
+    });
+
+    riskChartInstance = new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low Risk', 'Moderate', 'High Risk'],
+            datasets: [{
+                data: [low, moderate, high],
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'right' }, title: { display: true, text: 'Portfolio Risk Distribution' } }
+        }
+    });
+
+    approvalChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Passed (₹)', 'Flagged (₹)'],
+            datasets: [{
+                label: 'Total Loan Volume',
+                data: [approvedAmt, flaggedAmt],
+                backgroundColor: ['#8b5cf6', '#e2e8f0'],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, title: { display: true, text: 'Loan Volume Pipeline' } }
+        }
+    });
+}
 
 async function fetchApplicants() {
     try {
@@ -98,6 +227,7 @@ async function fetchApplicants() {
         applicantsData = data;
         dbCounter.textContent = `${data.length} Records`;
         filterAndRenderTable();
+        updateCharts(data);
     } catch (err) {
         console.error(err);
         applicantRows.innerHTML = `<tr><td colspan="7" class="table-placeholder" style="color:var(--color-red);">Error loading applicant records: ${err.message}</td></tr>`;
@@ -117,6 +247,20 @@ function filterAndRenderTable() {
     // 2. Filter by search name query
     if (searchQuery) {
         filtered = filtered.filter(app => app.name.toLowerCase().includes(searchQuery));
+    }
+    
+    // 3. Sort array
+    if (sortColumn) {
+        filtered.sort((a, b) => {
+            let valA = a[sortColumn];
+            let valB = b[sortColumn];
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+            
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
     }
     
     renderLedgerTable(filtered);
@@ -142,8 +286,8 @@ function renderLedgerTable(applicants) {
         
         return `
             <tr id="row-${app.id}" class="applicant-row-tr">
-                <td><strong>${escapeHtml(app.name)}</strong></td>
-                <td>₹${app.loan_amount.toLocaleString()}</td>
+                <td class="edit-cell-name"><strong>${escapeHtml(app.name)}</strong></td>
+                <td class="edit-cell-loan">₹${app.loan_amount.toLocaleString()}</td>
                 <td>${app.credit_score}</td>
                 <td>${app.debt_to_income}%</td>
                 <td class="risk-cell ${riskColorClass}">${riskVal}%</td>
@@ -151,6 +295,7 @@ function renderLedgerTable(applicants) {
                 <td>
                     <div class="row-actions">
                         <button class="row-btn ${isInspected}" onclick="inspectApplicant(${app.id})" title="Inspect Audit Report"><i data-lucide="eye"></i></button>
+                        <button class="row-btn" onclick="editApplicant(event, ${app.id})" title="Quick Edit"><i data-lucide="edit-2"></i></button>
                         <button class="row-btn delete-btn-hover" onclick="deleteApplicant(event, ${app.id})" title="Delete Application"><i data-lucide="trash-2"></i></button>
                     </div>
                 </td>
@@ -225,10 +370,11 @@ async function handleFormSubmit(e) {
         
         // Auto open the new applicant report
         inspectApplicant(result.id);
+        showToast("Application submitted successfully!", "success");
         
     } catch (err) {
         console.error(err);
-        alert(`Error calculating risk model: ${err.message}`);
+        showToast(`Error: ${err.message}`, "error");
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `<i data-lucide="calculator" class="btn-icon"></i> Calculate & Audit Risk`;
@@ -315,13 +461,10 @@ async function inspectApplicant(id) {
         // Reveal Inspector Card
         auditInspector.classList.remove("hidden");
         
-        // Auto scroll viewport down to see inspector easily
-        auditInspector.scrollIntoView({ behavior: "smooth" });
-        
         lucide.createIcons();
     } catch (err) {
         console.error(err);
-        alert(`Error opening report: ${err.message}`);
+        showToast(`Error opening report: ${err.message}`, "error");
     }
 }
 
@@ -341,9 +484,62 @@ async function deleteApplicant(e, id) {
         }
         
         await fetchApplicants();
+        showToast("Applicant deleted securely.", "success");
     } catch (err) {
         console.error(err);
-        alert(`Error deleting record: ${err.message}`);
+        showToast(`Error deleting record: ${err.message}`, "error");
+    }
+}
+
+function editApplicant(e, id) {
+    e.stopPropagation();
+    const tr = document.getElementById(`row-${id}`);
+    if (!tr) return;
+    const app = applicantsData.find(a => a.id === id);
+    if (!app) return;
+    
+    const nameCell = tr.querySelector('.edit-cell-name');
+    nameCell.innerHTML = `<input type="text" id="edit-name-${id}" value="${escapeHtml(app.name)}" style="width: 90px; padding: 4px; border: 1px solid var(--border-soft); border-radius: 4px; font-size: 0.8rem;">`;
+    
+    const loanCell = tr.querySelector('.edit-cell-loan');
+    loanCell.innerHTML = `<input type="number" id="edit-loan-${id}" value="${app.loan_amount}" style="width: 75px; padding: 4px; border: 1px solid var(--border-soft); border-radius: 4px; font-size: 0.8rem;">`;
+    
+    const actions = tr.querySelector('.row-actions');
+    actions.innerHTML = `
+        <button class="row-btn" onclick="saveApplicant(event, ${id})" style="color: #10b981; border-color: #10b981;" title="Save"><i data-lucide="check"></i></button>
+        <button class="row-btn" onclick="fetchApplicants()" title="Cancel"><i data-lucide="x"></i></button>
+    `;
+    lucide.createIcons();
+}
+
+async function saveApplicant(e, id) {
+    e.stopPropagation();
+    const nameInput = document.getElementById(`edit-name-${id}`);
+    const loanInput = document.getElementById(`edit-loan-${id}`);
+    if (!nameInput || !loanInput) return;
+    
+    const payload = {
+        name: nameInput.value.trim(),
+        loan_amount: parseFloat(loanInput.value)
+    };
+    
+    try {
+        const response = await fetch(`/api/applicants/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Update failed.");
+        }
+        
+        showToast("Applicant updated successfully.", "success");
+        await fetchApplicants();
+    } catch (err) {
+        console.error(err);
+        showToast(`Error updating record: ${err.message}`, "error");
     }
 }
 

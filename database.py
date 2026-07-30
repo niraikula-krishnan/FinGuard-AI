@@ -239,3 +239,36 @@ def delete_applicant_record(record_id: int) -> bool:
     before = len(_memory_records)
     _memory_records = [r for r in _memory_records if r["id"] != record_id]
     return len(_memory_records) < before
+
+
+def update_applicant(record_id: int, updates: dict) -> bool:
+    """Partially updates a record by ID."""
+    global _memory_records
+
+    if not updates:
+        return True
+
+    if _mysql_ok:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            set_clause = ", ".join([f"{k} = %s" for k in updates.keys()])
+            values = list(updates.values())
+            values.append(record_id)
+            cursor.execute(f"UPDATE loananalysis SET {set_clause} WHERE id = %s", tuple(values))
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Failed to update record {record_id}: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    for idx, row in enumerate(_memory_records):
+        if row["id"] == record_id:
+            for k, v in updates.items():
+                _memory_records[idx][k] = v
+            return True
+    return False
