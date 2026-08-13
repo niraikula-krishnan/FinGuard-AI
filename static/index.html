@@ -1,124 +1,129 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang=en data-theme=light>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinGuard-AI: Credit Risk & Compliance Auditor</title>
-    <!-- Google Fonts Outfit & Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Style Sheets -->
-    <link rel="stylesheet" href="style.css">
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- html2pdf.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <meta charset=UTF-8>
+    <meta name=viewport content=width=device-width, initial-scale=1.0>
+    <title>FinGuard-AI: Credit Risk and Compliance Auditor</title>
+    <meta name=description content=AI-powered loan risk assessment and AML compliance auditor for financial institutions.>
+    <link rel=preconnect href=https://fonts.googleapis.com>
+    <link rel=preconnect href=https://fonts.gstatic.com crossorigin>
+    <link href=https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap rel=stylesheet>
+    <link rel=stylesheet href=style.css>
+    <script src=https://unpkg.com/lucide@latest></script>
+    <script src=https://cdn.jsdelivr.net/npm/chart.js></script>
+    <script src=https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Control Header -->
-        <header class="app-header">
-            <div class="header-logo-group">
-                <i data-lucide="shield-alert" class="logo-icon"></i>
-                <div class="header-text">
-                    <h1>FinGuard-AI</h1>
-                    <p class="subtitle">Loan Risk Assessment & AML Compliance Auditor</p>
+    <div class=app-container>
+        <header class=app-header>
+            <div class=header-logo-group>
+                <div class=logo-icon-wrap>
+                    <i data-lucide=shield-alert class=logo-icon></i>
                 </div>
+                <div class=header-text>
+                    <div style=display:flex;align-items:center;gap:8px;>
+                        <h1>FinGuard<span class=header-ai-badge>AI</span></h1>
+                        <button id=glossary-btn class=glossary-info-btn title=Glossary of Terms>
+                            <i data-lucide=info></i>
+                        </button>
+                    </div>
+                    <p class=subtitle>Loan Risk Assessment and AML Compliance Auditor</p>
+                </div>
+            </div>
+            <div class=header-actions>
+                <button id=theme-toggle-btn class=theme-toggle-btn title=Toggle Dark Mode>
+                    <i data-lucide=moon id=theme-icon></i>
+                </button>
             </div>
         </header>
 
-        <!-- Main Dashboard Workspace -->
         <main class="app-workspace">
-            <!-- Left Panel: Submission File Form -->
-            <section class="form-section card">
+            <div class="top-row" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <section class="form-section card" style="flex: 1; min-width: 320px;">
+                    <div class="card-header">
+                        <h2><i data-lucide="file-plus" class="section-icon"></i> Submit Loan Application</h2>
+                    </div>
+                    <form id="loan-form" class="form-body">
+                        <div class="input-group">
+                            <label for="name">Applicant Name</label>
+                            <input type="text" id="name" placeholder="e.g. Rahul Sharma" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label for="income">Annual Income (Rs.)</label>
+                                <input type="number" id="income" min="1000" placeholder="e.g. 750000" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="loan_amount">Requested Loan (Rs.)</label>
+                                <input type="number" id="loan_amount" min="1000" placeholder="e.g. 250000" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label for="tenure">Tenure (Years)</label>
+                                <input type="number" id="tenure" min="1" max="30" value="5" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="emi_display">Payment per Month (Rs.)</label>
+                                <input type="text" id="emi_display" value="Rs.0" readonly>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label for="existing_monthly_debt">Existing Monthly Debt (Rs.)</label>
+                                <input type="number" id="existing_monthly_debt" min="0" step="100" value="0" placeholder="e.g. 5000" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="debt_to_income">Debt-to-Income (%) auto</label>
+                                <input type="text" id="debt_to_income" value="0%" readonly>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="credit_score">Credit Score (300-850)</label>
+                            <input type="number" id="credit_score" min="300" max="850" placeholder="e.g. 720" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="employment_status">Employment Status</label>
+                            <select id="employment_status">
+                                <option value="Employed" selected>Fully Employed</option>
+                                <option value="Self-Employed">Self-Employed / Business Owner</option>
+                                <option value="Student">Student / Academic</option>
+                                <option value="Unemployed">Unemployed</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="notes">Self-Reported Application Notes (Audited for AML)</label>
+                            <textarea id="notes" placeholder="Explain the loan purpose, business accounts, or cash source."></textarea>
+                        </div>
+                        <button type="submit" id="submit-btn" class="primary-btn">
+                            <i data-lucide="calculator" class="btn-icon"></i> Calculate and Audit Risk
+                        </button>
+                    </form>
+                </section>
+
+                <section class="analytics-section card" style="flex: 1; min-width: 320px;">
+                    <div class="card-header">
+                        <h2><i data-lucide="pie-chart" class="section-icon"></i> Risk Analytics</h2>
+                    </div>
+                    <div id="analytics-container" class="analytics-container" style="display:none; gap:15px; padding:10px 20px; flex-direction: column; flex: 1;">
+                        <div style="flex:1; display:flex; justify-content:center; position:relative; min-height: 200px;">
+                            <canvas id="riskDonutChart"></canvas>
+                        </div>
+                        <div style="flex:1; position:relative; min-height: 200px;">
+                            <canvas id="approvalBarChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="analytics-empty-state" style="display:flex; flex:1; align-items:center; justify-content:center; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;">
+                        Submit applications to view analytics.
+                    </div>
+                </section>
+            </div>
+
+            <section class="database-section card" style="flex: none; min-height: 400px; margin-top: 1.5rem;">
                 <div class="card-header">
-                    <h2><i data-lucide="file-plus" class="section-icon"></i> Submit Loan Application</h2>
-                </div>
-                <form id="loan-form" class="form-body">
-                    <div class="input-group">
-                        <label for="name">Applicant Name</label>
-                        <input type="text" id="name" placeholder="e.g. John Doe" required>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="input-group">
-                            <label for="income">Annual Income (₹)</label>
-                            <input type="number" id="income" min="1000" placeholder="e.g. 75000" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="loan_amount">Requested Loan (₹)</label>
-                            <input type="number" id="loan_amount" min="1000" placeholder="e.g. 25000" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="input-group">
-                            <label for="tenure">Tenure (Years)</label>
-                            <input type="number" id="tenure" min="1" max="30" value="5" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="emi_display">Payment per Month (₹)</label>
-                            <input type="text" id="emi_display" value="₹0" readonly>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="input-group">
-                            <label for="existing_monthly_debt">Existing Monthly Debt (₹)</label>
-                            <input type="number" id="existing_monthly_debt" min="0" step="100" value="0" placeholder="e.g. 5000" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="debt_to_income">Debt-to-Income (%) — auto</label>
-                            <input type="text" id="debt_to_income" value="0%" readonly>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="credit_score">Credit Score (300-850)</label>
-                        <input type="number" id="credit_score" min="300" max="850" placeholder="e.g. 720" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="employment_status">Employment Status</label>
-                        <select id="employment_status">
-                            <option value="Employed" selected>Fully Employed</option>
-                            <option value="Self-Employed">Self-Employed / Business Owner</option>
-                            <option value="Student">Student / Academic</option>
-                            <option value="Unemployed">Unemployed</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="notes">Self-Reported Application Notes (Audited for AML)</label>
-                        <textarea id="notes" placeholder="Explain the loan purpose, business accounts, or cash source. Notes containing triggers like 'crypto investment' or 'anonymous overseas account' will flag AML alerts."></textarea>
-                    </div>
-
-                    <button type="submit" id="submit-btn" class="primary-btn">
-                        <i data-lucide="calculator" class="btn-icon"></i> Calculate & Audit Risk
-                    </button>
-                </form>
-            </section>
-
-            <!-- Right Panel: Applicants Database & Inspector details -->
-            <section class="database-section card">
-                <div class="card-header">
-                    <h2><i data-lucide="database" class="section-icon"></i> Application Ledger Database</h2>
+                    <h2><i data-lucide="database" class="section-icon"></i> Application Ledger</h2>
                     <span id="db-counter" class="badge">0 Records</span>
                 </div>
-                
-                <!-- Analytics Charts -->
-                <div id="analytics-container" class="analytics-container" style="display: flex; gap: 15px; padding: 10px 20px; margin-bottom: 10px; border-bottom: 1px solid var(--border-light); height: 180px;">
-                    <div style="flex: 1; display: flex; justify-content: center; position: relative;">
-                        <canvas id="riskDonutChart"></canvas>
-                    </div>
-                    <div style="flex: 2; position: relative;">
-                        <canvas id="approvalBarChart"></canvas>
-                    </div>
-                </div>
-
                 <div class="table-filter-bar">
                     <div class="search-box-container">
                         <i data-lucide="search" class="search-icon"></i>
@@ -144,23 +149,16 @@
                             </tr>
                         </thead>
                         <tbody id="applicant-rows">
-                            <!-- Populated dynamically -->
-                            <tr>
-                                <td colspan="7" class="table-placeholder">No applications submitted yet. Fill in the form on the left.</td>
-                            </tr>
+                            <tr><td colspan="7" class="table-placeholder">No applications submitted yet. Fill in the form above.</td></tr>
                         </tbody>
                     </table>
                 </div>
-                
-                <!-- Bottom Divider: Detailed audit report of selected applicant -->
                 <div id="audit-inspector" class="audit-inspector hidden">
                     <div class="inspector-header">
                         <h3><i data-lucide="file-text"></i> Audit Dossier: <span id="inspect-name">Applicant Name</span></h3>
                         <button id="close-inspector-btn" class="close-btn">&times;</button>
                     </div>
-                    
                     <div class="inspector-layout">
-                        <!-- Score meters -->
                         <div class="inspector-metrics-column">
                             <div class="metric-card">
                                 <h4>Default Risk Modeler</h4>
@@ -173,28 +171,23 @@
                                 </div>
                                 <p id="inspect-grade" class="risk-badge grade-green">Low Risk (Grade A)</p>
                             </div>
-                            
                             <div class="metric-card">
                                 <h4>Compliance Checks Checklist</h4>
-                                <div id="compliance-checks-list" class="checks-checklist">
-                                    <!-- Dynamic list of individual rules -->
-                                </div>
+                                <div id="compliance-checks-list" class="checks-checklist"></div>
                             </div>
                         </div>
-                        
-                        <!-- LLM Text Report -->
                         <div class="inspector-report-column">
                             <div class="report-box">
-                                <div class="report-header-tab" style="display: flex; justify-content: space-between; align-items: center; padding-right: 15px;">
+                                <div class="report-header-tab" style="display:flex;justify-content:space-between;align-items:center;padding-right:15px;">
                                     <div>
                                         <span>Audit Report</span>
                                         <span id="inspect-report-mode" class="badge badge-rule-based">Rule-based</span>
                                     </div>
-                                    <button id="download-pdf-btn" class="submit-btn" style="padding: 6px 12px; font-size: 13px;"><i data-lucide="download" style="width: 14px; height: 14px; margin-right: 4px;"></i> Export PDF</button>
+                                    <button id="download-pdf-btn" class="primary-btn" style="padding:6px 14px;font-size:13px;">
+                                        <i data-lucide="download" style="width:14px;height:14px;margin-right:4px;"></i> Export PDF
+                                    </button>
                                 </div>
-                                <div id="inspect-report-text" class="report-markdown-body">
-                                    <!-- Formatted markdown report text -->
-                                </div>
+                                <div id="inspect-report-text" class="report-markdown-body"></div>
                             </div>
                         </div>
                     </div>
@@ -203,11 +196,92 @@
         </main>
     </div>
 
-    <!-- Initialize Lucide Icons -->
-    <script>
-        lucide.createIcons();
-    </script>
-    <!-- App Controller JS -->
-    <script src="app.js"></script>
+    <div id="glossary-modal" class="glossary-overlay hidden">
+        <div class=glossary-modal>
+            <div class=glossary-modal-header>
+                <div style=display:flex;align-items:center;gap:10px;>
+                    <i data-lucide=book-open style=width:20px;height:20px;color:var(--primary-color);></i>
+                    <h2>FinGuard Glossary</h2>
+                </div>
+                <button id=close-glossary-btn class=close-btn>&times;</button>
+            </div>
+            <p class=glossary-subtitle>A quick reference guide to all financial and risk terms used in this application.</p>
+            <div class=glossary-grid>
+                <div class=glossary-card>
+                    <div class=glossary-card-icon gc-blue><i data-lucide=calendar></i></div>
+                    <div>
+                        <h3>Tenure</h3>
+                        <p>The number of <strong>years</strong> over which a loan is repaid. A longer tenure means smaller monthly payments but more total interest paid. Example: 5-year tenure = 60 EMI payments.</p>
+                    </div>
+                </div>
+                <div class=glossary-card>
+                    <div class=glossary-card-icon gc-purple><i data-lucide=percent></i></div>
+                    <div>
+                        <h3>Debt-to-Income (DTI)</h3>
+                        <p>The ratio of total monthly debt payments to gross monthly income. A DTI above 40% is considered risky. Lower is better.</p>
+                        <code>DTI = (Monthly Debt / Monthly Income) x 100</code>
+                    </div>
+                </div>
+                <div class=glossary-card>
+                    <div class=glossary-card-icon gc-orange><i data-lucide=bar-chart-2></i></div>
+                    <div>
+                        <h3>Credit Score</h3>
+                        <p>A 3-digit number (300-850) representing creditworthiness. Based on payment history, debt levels, and credit age. Higher is better — 750+ is considered excellent.</p>
+                        <div class=credit-scale>
+                            <span class=cs-poor>300-579 Poor</span>
+                            <span class=cs-fair>580-669 Fair</span>
+                            <span class=cs-good>670-739 Good</span>
+                            <span class=cs-exc>800+ Excellent</span>
+                        </div>
+                    </div>
+                </div>
+                <div class=glossary-card>
+                    <div class=glossary-card-icon gc-green><i data-lucide=indian-rupee></i></div>
+                    <div>
+                        <h3>EMI (Payment per Month)</h3>
+                        <p>Equated Monthly Instalment — the fixed monthly amount to repay a loan. Calculated using loan amount, 10.5% annual interest rate, and tenure.</p>
+                        <code>EMI = P x r x (1+r)^n / ((1+r)^n - 1)</code>
+                    </div>
+                </div>
+                <div class=glossary-card>
+                    <div class=glossary-card-icon gc-red><i data-lucide=shield-alert></i></div>
+                    <div>
+                        <h3>Risk Score</h3>
+                        <p>FinGuard's default probability score (0-100%). Calculated from credit score, DTI, employment status, and loan-to-income ratio. Higher = more likely to default.</p>
+                        <div class=risk-scale>
+                            <span style=color:#10b981;font-weight:600;>0-25% Low Risk</span>
+                            <span style=color:#f59e0b;font-weight:600;>25-50% Moderate</span>
+                            <span style=color:#ef4444;font-weight:600;>50%+ High Risk</span>
+                        </div>
+                    </div>
+                </div>
+                <div class=glossary-card>
+                    <div class=glossary-card-icon gc-teal><i data-lucide=shield-check></i></div>
+                    <div>
+                        <h3>AML Compliance</h3>
+                        <p>Anti-Money Laundering checks scan the applicant notes and financial profile for red flags such as anonymous accounts, crypto wash trading, and suspicious cash flows. Result: PASSED or FLAGGED.</p>
+                    </div>
+                </div>
+                <div class=glossary-card>
+                    <div class=glossary-card-icon gc-blue><i data-lucide=briefcase></i></div>
+                    <div>
+                        <h3>Employment Status</h3>
+                        <p>The borrower's current work situation. Fully Employed carries the lowest risk. Unemployed significantly increases the default risk score as there is no guaranteed income stream.</p>
+                    </div>
+                </div>
+                <div class=glossary-card>
+                    <div class=glossary-card-icon gc-purple><i data-lucide=file-text></i></div>
+                    <div>
+                        <h3>Audit Report</h3>
+                        <p>A detailed AI-generated or rule-based analysis of the loan application. It summarizes risk factors, compliance checks, and provides a recommendation on whether the application should be approved or rejected.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id=toast-container></div>
+    <script>lucide.createIcons();</script>
+    <script src=app.js></script>
 </body>
 </html>

@@ -151,9 +151,88 @@ document.addEventListener("DOMContentLoaded", () => {
             filterAndRenderTable();
         });
     });
+
+    // Dark Mode Toggle
+    const themeToggleBtn = document.getElementById("theme-toggle-btn");
+    const savedTheme = localStorage.getItem("finguard-theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    
+    if (themeToggleBtn) {
+        themeToggleBtn.innerHTML = `<i data-lucide="${savedTheme === "dark" ? "sun" : "moon"}"></i>`;
+        lucide.createIcons();
+
+        themeToggleBtn.addEventListener("click", () => {
+            const current = document.documentElement.getAttribute("data-theme");
+            const next = current === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", next);
+            localStorage.setItem("finguard-theme", next);
+            themeToggleBtn.innerHTML = `<i data-lucide="${next === "dark" ? "sun" : "moon"}"></i>`;
+            lucide.createIcons();
+        });
+    }
+
+    // Glossary Modal
+    const glossaryBtn = document.getElementById("glossary-btn");
+    const glossaryModal = document.getElementById("glossary-modal");
+    const closeGlossaryBtn = document.getElementById("close-glossary-btn");
+
+    if (glossaryBtn) {
+        glossaryBtn.addEventListener("click", () => {
+            glossaryModal.classList.remove("hidden");
+            lucide.createIcons();
+        });
+    }
+    if (closeGlossaryBtn) {
+        closeGlossaryBtn.addEventListener("click", () => glossaryModal.classList.add("hidden"));
+    }
+    if (glossaryModal) {
+        glossaryModal.addEventListener("click", (e) => {
+            if (e.target === glossaryModal) glossaryModal.classList.add("hidden");
+        });
+    }
 });
 
 loanForm.addEventListener("submit", handleFormSubmit);
+
+function updateStats(data) {
+    const total = data.length;
+    const portfolio = data.reduce((s, a) => s + (a.loan_amount || 0), 0);
+    const avgRisk = total > 0 ? (data.reduce((s, a) => s + (a.risk_score || 0), 0) / total) : 0;
+    const passed = data.filter(a => a.compliance_status === "PASSED").length;
+    const passRate = total > 0 ? ((passed / total) * 100) : 0;
+
+    animateCounter(document.getElementById("stat-total"), total, "", "");
+    animateCounter(document.getElementById("stat-portfolio"), portfolio, "Rs.", "", true);
+    animateCounter(document.getElementById("stat-avg-risk"), avgRisk, "", "%");
+    animateCounter(document.getElementById("stat-pass-rate"), passRate, "", "%");
+}
+
+function animateCounter(el, targetVal, prefix, suffix, isLarge = false) {
+    if (!el) return;
+    const start = 0;
+    const duration = 800;
+    const startTime = performance.now();
+    const update = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const current = start + (targetVal - start) * ease;
+        if (isLarge) {
+            el.textContent = prefix + formatLargeNum(current) + suffix;
+        } else {
+            el.textContent = prefix + (Number.isInteger(targetVal) ? Math.round(current) : current.toFixed(1)) + suffix;
+        }
+        if (progress < 1) requestAnimationFrame(update);
+    };
+    requestAnimationFrame(update);
+}
+
+function formatLargeNum(n) {
+    if (n >= 10000000) return (n / 10000000).toFixed(1) + "Cr";
+    if (n >= 100000)   return (n / 100000).toFixed(1) + "L";
+    if (n >= 1000)     return (n / 1000).toFixed(1) + "K";
+    return Math.round(n).toString();
+}
 
 function updateCharts(data) {
     const riskCtx = document.getElementById('riskDonutChart');
@@ -161,11 +240,16 @@ function updateCharts(data) {
     const container = document.getElementById('analytics-container');
     if (!riskCtx || !barCtx) return;
 
-    if (!data || data.length === 0) {
-        if (container) container.style.display = 'none';
-        return;
+    // Toggle visibility based on data
+    if (data.length > 0) {
+        document.getElementById('analytics-container').style.display = 'flex';
+        const emptyState = document.getElementById('analytics-empty-state');
+        if (emptyState) emptyState.style.display = 'none';
     } else {
-        if (container) container.style.display = 'flex';
+        document.getElementById('analytics-container').style.display = 'none';
+        const emptyState = document.getElementById('analytics-empty-state');
+        if (emptyState) emptyState.style.display = 'flex';
+        return; // Don't draw empty charts
     }
 
     // Destroy existing instances if they exist
