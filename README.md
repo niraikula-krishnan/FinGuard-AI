@@ -1,13 +1,3 @@
----
-title: FinGuard-AI
-emoji: 🛡️
-colorFrom: gray
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
-license: mit
----
 
 # FinGuard-AI
 
@@ -265,39 +255,37 @@ python test_app.py
 
 ## Deploy live (free)
 
-### Option A: Render — **recommended** (full FastAPI app)
+### Option A: Render — **Recommended** (Full-Stack Deployment)
 
-Best for the **complete app** (form, API, risk engine, audit reports).
+Render is the best platform for this project because it natively supports Python FastAPI backends and can serve the frontend files simultaneously.
 
-1. Push code to GitHub: `github.com/niraikula-krishnan/FinGuard-AI`
-2. Go to [render.com](https://render.com) → **New → Blueprint** (or Web Service)
-3. Connect your **FinGuard-AI** repo — Render reads `render.yaml` automatically
+1. Push your code to a GitHub repository.
+2. Go to [render.com](https://render.com) → **New → Web Service**.
+3. Connect your **FinGuard-AI** repository. Render will automatically read the `render.yaml` file in the project to configure the build.
 4. **Environment variables** (Render dashboard → Environment):
-   - `GEMINI_API_KEY` — optional, for AI audit reports
-   - **Do not** set `MYSQL_HOST` on free tier — app uses in-memory storage (demo mode)
-5. Click **Deploy** — live URL in ~5 minutes: `https://finguard-ai.onrender.com` (name may vary)
+   - `GEMINI_API_KEY` — optional, for AI audit reports.
+   - **Do not** set `MYSQL_HOST` on the free tier — the app will safely fall back to in-memory storage for the live demo.
+5. Click **Deploy**. Your app will be live in about 5 minutes!
 
-| Render free tier | Note |
+| Render Free Tier | Details |
 |----------------|------|
 | Cost | $0 |
 | Sleep | App sleeps after ~15 min idle; first load may take 30–60 sec |
-| Database | In-memory demo (MySQL code still on GitHub for reviewers) |
+| Database | In-memory demo (MySQL code remains in source for reviewers) |
 
 ---
 
-### Option B: Netlify (static demo only)
+### Option B: Netlify (Frontend Only)
 
-Netlify hosts **static sites only** — not FastAPI. Use the `hf_deploy/` browser demo.
+Netlify is excellent for hosting static frontends, but it cannot run the Python FastAPI backend. If you want to deploy just the UI on Netlify and point it to your Render backend:
 
-1. Go to [netlify.com](https://netlify.com) → **Add new site → Import from Git**
-2. Select **FinGuard-AI** repo
-3. Build settings (auto-read from `netlify.toml`):
-   - **Publish directory:** `hf_deploy`
+1. Update `app.js` in the `static/` folder: change the API base URL from relative (`/api/applicants`) to your Render backend URL (e.g., `https://your-finguard-app.onrender.com/api/applicants`).
+2. Go to [netlify.com](https://netlify.com) → **Add new site → Import from Git**.
+3. Select your **FinGuard-AI** repository.
+4. Build settings:
+   - **Publish directory:** `static`
    - **Build command:** (leave empty)
-4. Deploy → live URL like `https://finguard-ai.netlify.app`
-
-| Netlify | What you get |
-|---------|----------------|
+5. Deploy! Your UI will be hosted on a lightning-fast CDN.
 | Full FastAPI backend | No |
 | Working UI demo in browser | Yes |
 | Free forever | Yes |

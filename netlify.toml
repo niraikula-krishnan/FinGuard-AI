@@ -1,5 +1,5 @@
 [build]
-  publish = "hf_deploy"
+  publish = "static"
 
 [[redirects]]
   from = "/*"
